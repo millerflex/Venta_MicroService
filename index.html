@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sistema de Ventas</title>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-blue-700 text-white py-6 shadow-md">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl font-bold">💰 Sistema de Ventas</h1>
+            <p class="text-sm mt-2">Gestión de Productos y Ventas</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto my-10 space-y-12">
+
+        <!-- Gestión de Productos -->
+        <section id="productos" class="mt-12">
+            <h2 class="text-2xl font-bold mb-6 text-center">Gestión de Productos</h2>
+
+            <!-- Formulario para registrar producto -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-lg font-semibold mb-4">Registrar Nuevo Producto</h3>
+                <form id="producto-form" class="space-y-4">
+                    <div>
+                        <label for="nombre-producto" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                        <input type="text" id="nombre-producto" class="w-full mt-1 p-2 border border-gray-300 rounded-md" placeholder="Nombre del producto">
+                    </div>
+                    <div>
+                        <label for="precio-producto" class="block text-sm font-medium text-gray-700">Precio</label>
+                        <input type="number" id="precio-producto" step="0.01" class="w-full mt-1 p-2 border border-gray-300 rounded-md" placeholder="Precio del producto">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Registrar Producto</button>
+                </form>
+            </div>
+
+            <!-- Lista de Productos -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Lista de Productos</h3>
+                <ul id="productos-lista" class="bg-white rounded-lg shadow-md p-4 space-y-2">
+                    <!-- Productos dinámicos -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- Gestión de Ventas -->
+        <section id="ventas" class="mt-12">
+            <h2 class="text-2xl font-bold mb-6 text-center">Gestión de Ventas</h2>
+
+            <!-- Formulario para registrar venta -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-lg font-semibold mb-4">Registrar Nueva Venta</h3>
+                <form id="venta-form" class="space-y-4">
+                    <div>
+                        <label for="producto-venta" class="block text-sm font-medium text-gray-700">Producto</label>
+                        <select id="producto-venta" class="w-full mt-1 p-2 border border-gray-300 rounded-md">
+                            <option value="">-- Seleccione un producto --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="cantidad-venta" class="block text-sm font-medium text-gray-700">Cantidad</label>
+                        <input type="number" id="cantidad-venta" class="w-full mt-1 p-2 border border-gray-300 rounded-md" placeholder="Cantidad vendida">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700">Registrar Venta</button>
+                </form>
+            </div>
+
+            <!-- Historial de Ventas -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Historial de Ventas</h3>
+                <ul id="ventas-lista" class="bg-white rounded-lg shadow-md p-4 space-y-2">
+                    <!-- Ventas dinámicas -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const productoForm = document.getElementById('producto-form');
+            const productosLista = document.getElementById('productos-lista');
+            const productoSelect = document.getElementById('producto-venta');
+            const ventasLista = document.getElementById('ventas-lista');
+
+            // Función para cargar productos
+            const cargarProductos = async () => {
+                try {
+                    const response = await axios.get('http://localhost:8085/productos');
+                    productosLista.innerHTML = ''; // Limpiar lista de productos
+                    productoSelect.innerHTML = '<option value="">-- Seleccione un producto --</option>'; // Limpiar select de productos
+                    response.data.forEach((producto) => {
+                        const item = document.createElement('li');
+                        item.textContent = `${producto.nombre} - $${producto.precio}`;
+                        productosLista.appendChild(item);
+
+                        const option = document.createElement('option');
+                        option.value = producto.id; // ID único del producto
+                        option.textContent = producto.nombre;
+                        productoSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error al cargar productos:', error);
+                }
+            };
+
+            // Manejar registro de nuevo producto
+            productoForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const nombre = document.getElementById('nombre-producto').value;
+                const precio = document.getElementById('precio-producto').value;
+
+                if (!nombre || !precio) {
+                    alert('Por favor, complete todos los campos.');
+                    return;
+                }
+
+                try {
+                    await axios.post('http://localhost:8085/productos', { nombre, precio });
+                    alert('Producto registrado con éxito');
+                    await cargarProductos(); // Recargar la lista de productos
+                } catch (error) {
+                    console.error('Error al registrar producto:', error);
+                    alert('Hubo un error al registrar el producto.');
+                }
+            });
+
+            // Función para cargar historial de ventas
+            const cargarVentas = async () => {
+                try {
+                    const response = await axios.get('http://localhost:8085/registros');
+                    ventasLista.innerHTML = ''; // Limpiar lista de ventas
+                    response.data.forEach((venta) => {
+                        const item = document.createElement('li');
+                        item.textContent = `Producto: ${venta.productoNombre}, Cantidad: ${venta.cantidad}, Total: $${venta.total}`;
+                        ventasLista.appendChild(item);
+                    });
+                } catch (error) {
+                    console.error('Error al cargar ventas:', error);
+                }
+            };
+
+            // Manejar registro de nueva venta
+            document.getElementById('venta-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const productoId = productoSelect.value;
+                const cantidad = document.getElementById('cantidad-venta').value;
+
+                if (!productoId || !cantidad) {
+                    alert('Por favor, seleccione un producto y una cantidad válida.');
+                    return;
+                }
+
+                try {
+                    await axios.post('http://localhost:8085/registros', { productoId, cantidad });
+                    alert('Venta registrada con éxito');
+                    await cargarVentas(); // Recargar el historial de ventas
+                } catch (error) {
+                    console.error('Error al registrar venta:', error);
+                    alert('Hubo un error al registrar la venta.');
+                }
+            });
+
+            // Inicializar: cargar productos y ventas existentes
+            await cargarProductos();
+            await cargarVentas();
+        });
+    </script>
+
+</body>
+</html>
